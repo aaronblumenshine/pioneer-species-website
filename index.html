@@ -3,1273 +3,223 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UI Terms Quiz</title>
+  <title>Pioneer Notes</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --surface2: #22263a;
-      --border: #2e3350;
-      --accent: #6c63ff;
-      --accent2: #9b94ff;
-      --text: #e8eaf6;
-      --muted: #7b82a8;
-      --success: #3ecf8e;
-      --danger: #ff5c6a;
-      --warn: #f7c94b;
-      --r: 10px;
-    }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: #f5f5f0;
+      color: #1a1a1a;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px 16px 80px;
+      padding: 2rem 1rem;
     }
 
-    .app-header {
-      width: 100%; max-width: 680px;
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 28px;
-    }
-    .app-title { font-size: 1.25rem; font-weight: 700; }
-    .app-title span { color: var(--accent2); }
-
-    .mode-pills { display: flex; gap: 6px; }
-    .mode-pill {
-      background: var(--surface); border: 1px solid var(--border);
-      color: var(--muted); padding: 5px 12px; border-radius: 20px;
-      font-size: 0.77rem; cursor: pointer; transition: all .15s;
-    }
-    .mode-pill.active, .mode-pill:hover {
-      background: var(--accent); border-color: var(--accent); color: #fff;
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
     }
 
-    .progress-row {
-      width: 100%; max-width: 680px;
-      display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
-    }
-    .progress-track { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
-    .progress-fill  { height:100%; background:var(--accent); border-radius:2px; transition:width .4s ease; }
-    .progress-label { font-size:.75rem; color:var(--muted); white-space:nowrap; }
-
-    .score-strip { width:100%; max-width:680px; display:flex; gap:12px; margin-bottom:18px; }
-    .score-chip {
-      background:var(--surface); border:1px solid var(--border); border-radius:20px;
-      padding:5px 14px; font-size:.77rem;
-    }
-    .score-chip .val { font-weight:700; margin-left:4px; }
-    .score-chip.c .val { color:var(--success); }
-    .score-chip.w .val { color:var(--danger); }
-    .score-chip.s .val { color:var(--warn); }
-
-    /* ── Question card ── */
-    .card {
-      width:100%; max-width:680px;
-      background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
-      overflow:hidden; margin-bottom:14px; animation:fi .22s ease;
-    }
-    @keyframes fi { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-
-    /* Visual preview box */
-    .preview-box {
-      width:100%; height:180px;
-      background:#111420; border-bottom:1px solid var(--border);
-      display:flex; align-items:center; justify-content:center;
-      overflow:hidden; position:relative;
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      letter-spacing: -0.02em;
     }
 
-    .q-meta { padding:18px 20px 16px; }
-    .q-badge {
-      display:inline-block; font-size:.67rem; font-weight:700;
-      text-transform:uppercase; letter-spacing:.6px;
-      padding:3px 10px; border-radius:10px;
-      background:rgba(108,99,255,.15); color:var(--accent2); margin-bottom:10px;
+    .form-card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
     }
-    .q-text { font-size:1.05rem; font-weight:600; line-height:1.5; }
-    .q-sub  { font-size:.8rem; color:var(--muted); margin-top:4px; }
 
-    /* ── Options ── */
-    .options { width:100%; max-width:680px; display:flex; flex-direction:column; gap:9px; }
-    .opt {
-      background:var(--surface); border:1px solid var(--border); color:var(--text);
-      text-align:left; padding:13px 16px; border-radius:var(--r);
-      font-size:.88rem; cursor:pointer; transition:all .15s; animation:fi .28s ease;
-      display:flex; gap:10px; align-items:flex-start; line-height:1.5;
+    .form-card input,
+    .form-card textarea {
+      width: 100%;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 0.625rem 0.75rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #fafafa;
     }
-    .opt:hover:not(:disabled) { border-color:var(--accent); background:var(--surface2); }
-    .opt:disabled { cursor:default; }
-    .opt.correct { border-color:var(--success); background:rgba(62,207,142,.1); color:var(--success); }
-    .opt.wrong   { border-color:var(--danger);  background:rgba(255,92,106,.1);  color:var(--danger); }
-    .opt.dimmed  { opacity:.3; }
-    .opt-key {
-      flex-shrink:0; width:20px; height:20px; border-radius:5px;
-      background:var(--surface2); border:1px solid var(--border);
-      font-size:.7rem; font-weight:700;
-      display:flex; align-items:center; justify-content:center; color:var(--muted);
-      margin-top:1px;
-    }
-    .opt.correct .opt-key { background:var(--success); border-color:var(--success); color:#fff; }
-    .opt.wrong   .opt-key { background:var(--danger);  border-color:var(--danger);  color:#fff; }
 
-    /* ── Visual options (for Recognize mode) ── */
-    .visual-options {
-      width:100%; max-width:680px;
-      display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    .form-card input:focus,
+    .form-card textarea:focus {
+      border-color: #6366f1;
+      background: #fff;
     }
-    .vopt {
-      background:var(--surface); border:2px solid var(--border); border-radius:var(--r);
-      overflow:hidden; cursor:pointer; transition:all .15s; animation:fi .28s ease;
-    }
-    .vopt:hover:not(.vopt-disabled) { border-color:var(--accent); }
-    .vopt-disabled { cursor:default; }
-    .vopt.correct { border-color:var(--success); }
-    .vopt.wrong   { border-color:var(--danger); }
-    .vopt.dimmed  { opacity:.3; }
-    .vopt-preview { height:120px; background:#111420; overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative; }
-    .vopt-label {
-      padding:8px 12px; font-size:.82rem; font-weight:600;
-      display:flex; align-items:center; gap:6px;
-    }
-    .vopt.correct .vopt-label { color:var(--success); }
-    .vopt.wrong   .vopt-label { color:var(--danger); }
-    .vopt-key {
-      flex-shrink:0; width:18px; height:18px; border-radius:4px;
-      background:var(--surface2); border:1px solid var(--border);
-      font-size:.65rem; font-weight:700;
-      display:flex; align-items:center; justify-content:center; color:var(--muted);
-    }
-    .vopt.correct .vopt-key { background:var(--success); border-color:var(--success); color:#fff; }
-    .vopt.wrong   .vopt-key { background:var(--danger);  border-color:var(--danger);  color:#fff; }
 
-    /* ── Feedback ── */
-    .feedback {
-      width:100%; max-width:680px;
-      background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
-      padding:16px 18px; margin-top:10px; display:none;
-    }
-    .feedback.show { display:block; animation:fi .2s ease; }
-    .fb-head { font-weight:700; font-size:.88rem; margin-bottom:10px; }
-    .fb-head.ok  { color:var(--success); }
-    .fb-head.bad { color:var(--danger); }
-    .fb-row { margin-top:9px; }
-    .fb-lbl { font-size:.67rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:2px; }
-    .fb-val { font-size:.83rem; line-height:1.5; }
-    .fb-val.tip { color:var(--accent2); }
-    .fb-val.cmp { color:var(--warn); }
+    .form-card input { margin-bottom: 0.625rem; }
+    .form-card textarea { min-height: 90px; margin-bottom: 0.75rem; }
 
-    .next-btn {
-      width:100%; max-width:680px;
-      background:var(--accent); border:none; color:#fff;
-      padding:13px; border-radius:var(--r); font-size:.92rem; font-weight:600;
-      cursor:pointer; margin-top:12px; transition:background .15s, transform .1s; display:none;
+    button {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
     }
-    .next-btn.show { display:block; }
-    .next-btn:hover  { background:var(--accent2); }
-    .next-btn:active { transform:scale(.98); }
 
-    /* ── Start screen ── */
-    .start { width:100%; max-width:680px; text-align:center; }
-    .start h1 { font-size:1.9rem; font-weight:700; margin-bottom:8px; }
-    .start h1 span { color:var(--accent2); }
-    .start p { color:var(--muted); font-size:.92rem; margin-bottom:32px; }
-    .start-opts { display:flex; flex-direction:column; gap:10px; margin-bottom:28px; text-align:left; }
-    .sopt {
-      background:var(--surface); border:2px solid var(--border); border-radius:var(--r);
-      padding:14px 18px; cursor:pointer; transition:all .15s;
-    }
-    .sopt:hover, .sopt.sel { border-color:var(--accent); }
-    .sopt.sel { background:rgba(108,99,255,.08); }
-    .sopt-title { font-weight:600; margin-bottom:3px; }
-    .sopt-sub { font-size:.8rem; color:var(--muted); }
-    .start-mode-row { margin-bottom:24px; }
-    .start-mode-row p { font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:10px; }
-    .start-mode-row .pills { display:flex; gap:8px; justify-content:center; }
-    .start-btn {
-      background:var(--accent); border:none; color:#fff;
-      padding:13px 40px; border-radius:var(--r); font-size:.95rem; font-weight:600;
-      cursor:pointer; transition:background .15s;
-    }
-    .start-btn:hover { background:var(--accent2); }
+    button:hover { background: #4f52d8; }
+    button:disabled { background: #a5b4fc; cursor: not-allowed; }
 
-    /* ── Results ── */
-    .results { width:100%; max-width:680px; text-align:center; display:none; }
-    .results.show { display:block; }
-    .r-icon  { font-size:3.5rem; margin-bottom:10px; }
-    .r-title { font-size:1.5rem; font-weight:700; margin-bottom:6px; }
-    .r-sub   { color:var(--muted); font-size:.88rem; margin-bottom:26px; }
-    .r-stats { display:flex; justify-content:center; gap:16px; margin-bottom:28px; flex-wrap:wrap; }
-    .r-stat  { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px 20px; min-width:100px; }
-    .r-stat-v { font-size:1.8rem; font-weight:700; margin-bottom:3px; }
-    .r-stat-l { font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
-    .review-list { text-align:left; margin-bottom:26px; }
-    .review-list h3 { font-size:.78rem; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:10px; }
-    .r-item { background:var(--surface); border:1px solid var(--danger); border-radius:8px; padding:11px 14px; margin-bottom:7px; }
-    .r-item-t { font-weight:600; font-size:.85rem; margin-bottom:2px; }
-    .r-item-d { font-size:.78rem; color:var(--muted); }
-    .replay-btn {
-      background:var(--accent); border:none; color:#fff;
-      padding:12px 34px; border-radius:var(--r); font-size:.95rem; font-weight:600;
-      cursor:pointer; transition:background .15s;
+    .status {
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+      min-height: 1.2em;
+      color: #6b7280;
     }
-    .replay-btn:hover { background:var(--accent2); }
 
-    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
-    @keyframes slide-in-r { from{transform:translateX(100%)} to{transform:translateX(0)} }
-    @keyframes pop { from{transform:scale(.7);opacity:0} to{transform:scale(1);opacity:1} }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .status.error { color: #dc2626; }
+    .status.success { color: #16a34a; }
+
+    .notes-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .note-card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+    }
+
+    .note-title {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .note-body {
+      font-size: 0.9375rem;
+      color: #374151;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .note-date {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-top: 0.625rem;
+    }
+
+    .empty {
+      text-align: center;
+      color: #9ca3af;
+      padding: 2rem 0;
+      font-size: 0.9375rem;
+    }
+
+    .loading {
+      text-align: center;
+      color: #9ca3af;
+      padding: 2rem 0;
+    }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Pioneer Notes</h1>
 
-<div class="app-header">
-  <div class="app-title">UI <span>Quiz</span></div>
-  <div class="mode-pills" id="mode-pills" style="display:none">
-    <button class="mode-pill active" data-mode="name-it">Name It</button>
-    <button class="mode-pill" data-mode="define-it">Define It</button>
-    <button class="mode-pill" data-mode="recognize-it">Recognize It</button>
-  </div>
-</div>
-
-<!-- Start Screen -->
-<div class="start" id="start-screen">
-  <h1>Learn <span>UI Terms</span></h1>
-  <p>43 components — see the visual, learn the name & definition</p>
-
-  <div class="start-opts">
-    <div class="sopt sel" data-count="10">
-      <div class="sopt-title">Quick Round — 10 questions</div>
-      <div class="sopt-sub">Fast warm-up.</div>
+    <div class="form-card">
+      <input id="title" type="text" placeholder="Title" maxlength="200" />
+      <textarea id="body" placeholder="What's on your mind?"></textarea>
+      <button id="submit-btn" onclick="submitNote()">Post Note</button>
+      <div id="status" class="status"></div>
     </div>
-    <div class="sopt" data-count="20">
-      <div class="sopt-title">Standard — 20 questions</div>
-      <div class="sopt-sub">Solid coverage.</div>
-    </div>
-    <div class="sopt" data-count="43">
-      <div class="sopt-title">Full Deck — all 43 terms</div>
-      <div class="sopt-sub">Complete UI vocabulary.</div>
+
+    <div id="notes-list" class="notes-list">
+      <div class="loading">Loading notes&hellip;</div>
     </div>
   </div>
 
-  <div class="start-mode-row">
-    <p>Quiz Mode</p>
-    <div class="pills">
-      <button class="mode-pill active" id="sm-name">Name It</button>
-      <button class="mode-pill" id="sm-define">Define It</button>
-      <button class="mode-pill" id="sm-recog">Recognize It</button>
-    </div>
-  </div>
+  <script>
+    const SUPABASE_URL = 'https://sekpqplpwiiithfqyjmo.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNla3BxcGxwd2lpaXRoZnF5am1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MjY2ODgsImV4cCI6MjA5MjMwMjY4OH0.BtPXCYZN1aFV-LhxMfVhP7Ad4w3BzxojIvIfvAwRQxk';
 
-  <button class="start-btn" id="start-btn">Start Quiz →</button>
-</div>
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-<!-- Game Area -->
-<div id="game" style="display:none;width:100%;max-width:680px;">
-  <div class="progress-row">
-    <div class="progress-track"><div class="progress-fill" id="pbar"></div></div>
-    <div class="progress-label" id="plabel">0 / 0</div>
-  </div>
-  <div class="score-strip">
-    <div class="score-chip c">Correct <span class="val" id="sc-c">0</span></div>
-    <div class="score-chip w">Wrong <span class="val" id="sc-w">0</span></div>
-    <div class="score-chip s">Streak <span class="val" id="sc-s">🔥 0</span></div>
-  </div>
+    function escape(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
 
-  <div class="card" id="qcard">
-    <div class="preview-box" id="preview-box"></div>
-    <div class="q-meta">
-      <div class="q-badge" id="qbadge">Name the component</div>
-      <div class="q-text" id="qtext"></div>
-      <div class="q-sub"  id="qsub"></div>
-    </div>
-  </div>
+    async function loadNotes() {
+      const list = document.getElementById('notes-list');
+      const { data, error } = await db
+        .from('notes')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  <div id="opts-container"></div>
+      if (error) {
+        list.innerHTML = `<div class="empty">Failed to load notes: ${escape(error.message)}</div>`;
+        return;
+      }
 
-  <div class="feedback" id="fb">
-    <div class="fb-head" id="fb-head"></div>
-    <div class="fb-row"><div class="fb-lbl">Definition</div><div class="fb-val" id="fb-def"></div></div>
-    <div class="fb-row"><div class="fb-lbl">Vibe Tip</div><div class="fb-val tip" id="fb-tip"></div></div>
-    <div class="fb-row"><div class="fb-lbl">Compare</div><div class="fb-val cmp" id="fb-cmp"></div></div>
-  </div>
+      if (!data.length) {
+        list.innerHTML = '<div class="empty">No notes yet &mdash; post the first one.</div>';
+        return;
+      }
 
-  <button class="next-btn" id="next-btn">Next →</button>
-</div>
-
-<!-- Results -->
-<div class="results" id="results">
-  <div class="r-icon" id="r-icon">🎉</div>
-  <div class="r-title" id="r-title">Quiz Complete!</div>
-  <div class="r-sub" id="r-sub"></div>
-  <div class="r-stats">
-    <div class="r-stat"><div class="r-stat-v" id="r-c" style="color:var(--success)">0</div><div class="r-stat-l">Correct</div></div>
-    <div class="r-stat"><div class="r-stat-v" id="r-w" style="color:var(--danger)">0</div><div class="r-stat-l">Wrong</div></div>
-    <div class="r-stat"><div class="r-stat-v" id="r-p" style="color:var(--accent2)">0%</div><div class="r-stat-l">Score</div></div>
-    <div class="r-stat"><div class="r-stat-v" id="r-s" style="color:var(--warn)">0</div><div class="r-stat-l">Best Streak</div></div>
-  </div>
-  <div class="review-list" id="review"></div>
-  <button class="replay-btn" id="replay-btn">Play Again</button>
-</div>
-
-<script>
-// ─────────────────────────────────────────────
-// COMPONENT VISUAL PREVIEWS
-// Each returns an HTML string rendered at 100% x 180px
-// ─────────────────────────────────────────────
-const P = {
-
-"Modal (Dialog)": `
-  <div style="position:relative;width:100%;height:100%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;">
-    <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:10px;width:220px;padding:18px;box-shadow:0 8px 32px rgba(0,0,0,.6);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <span style="font-size:.82rem;font-weight:700;color:#e8eaf6;">Confirm Delete</span>
-        <span style="color:#7b82a8;font-size:.9rem;">✕</span>
-      </div>
-      <div style="font-size:.72rem;color:#7b82a8;line-height:1.5;margin-bottom:14px;">This action cannot be undone. Are you sure?</div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <div style="padding:5px 10px;border:1px solid #2e3350;border-radius:6px;font-size:.7rem;color:#7b82a8;">Cancel</div>
-        <div style="padding:5px 12px;background:#ff5c6a;border-radius:6px;font-size:.7rem;color:#fff;font-weight:600;">Delete</div>
-      </div>
-    </div>
-  </div>`,
-
-"Drawer (Sheet)": `
-  <div style="position:relative;width:100%;height:100%;background:#0f1117;overflow:hidden;">
-    <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);"></div>
-    <div style="position:absolute;top:0;right:0;bottom:0;width:180px;background:#1a1d27;border-left:1px solid #2e3350;padding:16px;animation:slide-in-r .3s ease;">
-      <div style="font-size:.78rem;font-weight:700;color:#e8eaf6;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #2e3350;">Menu</div>
-      ${['Dashboard','Projects','Settings','Profile'].map(i=>`<div style="padding:8px 0;font-size:.75rem;color:#7b82a8;border-bottom:1px solid #2e3350;">${i}</div>`).join('')}
-    </div>
-  </div>`,
-
-"Popover": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:relative;">
-    <div style="position:relative;">
-      <div style="background:#6c63ff;border-radius:7px;padding:8px 16px;font-size:.78rem;font-weight:600;color:#fff;cursor:pointer;">+ Add tag</div>
-      <div style="position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1a1d27;border:1px solid #2e3350;border-radius:8px;padding:12px;width:170px;box-shadow:0 8px 24px rgba(0,0,0,.5);">
-        <div style="font-size:.68rem;color:#7b82a8;margin-bottom:8px;font-weight:600;text-transform:uppercase;">Select tags</div>
-        ${['Design','Frontend','Review'].map(t=>`<div style="padding:5px 8px;font-size:.73rem;color:#e8eaf6;border-radius:4px;margin-bottom:2px;background:#22263a;">${t}</div>`).join('')}
-        <div style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:#1a1d27;border-right:1px solid #2e3350;border-bottom:1px solid #2e3350;transform:translateX(-50%) rotate(45deg);"></div>
-      </div>
-    </div>
-  </div>`,
-
-"Tooltip": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;gap:32px;">
-    <div style="position:relative;text-align:center;">
-      <div style="width:36px;height:36px;border-radius:50%;background:#22263a;border:1px solid #2e3350;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#9b94ff;cursor:pointer;">ℹ</div>
-      <div style="position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#0f1117;border:1px solid #2e3350;border-radius:6px;padding:5px 10px;white-space:nowrap;font-size:.68rem;color:#e8eaf6;">
-        More information
-        <div style="position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#0f1117;"></div>
-      </div>
-    </div>
-    <div style="font-size:.72rem;color:#7b82a8;text-align:center;">Hover<br>= tooltip</div>
-  </div>`,
-
-"Toast": `
-  <div style="position:relative;width:100%;height:100%;background:#0f1117;">
-    <div style="position:absolute;bottom:16px;right:16px;background:#1a1d27;border:1px solid #2e3350;border-radius:9px;padding:12px 16px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.5);display:flex;align-items:center;gap:10px;animation:pop .3s ease;">
-      <div style="width:28px;height:28px;border-radius:50%;background:rgba(62,207,142,.15);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#3ecf8e;font-size:.9rem;">✓</div>
-      <div>
-        <div style="font-size:.78rem;font-weight:600;color:#e8eaf6;margin-bottom:2px;">Saved successfully</div>
-        <div style="font-size:.68rem;color:#7b82a8;">Changes have been applied.</div>
-      </div>
-      <div style="margin-left:auto;color:#7b82a8;font-size:.75rem;cursor:pointer;">✕</div>
-    </div>
-    <div style="position:absolute;bottom:70px;right:16px;background:#1a1d27;border:1px solid #2e3350;border-radius:9px;padding:12px 16px;min-width:200px;opacity:.35;display:flex;align-items:center;gap:10px;">
-      <div style="width:28px;height:28px;border-radius:50%;background:rgba(247,201,75,.1);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#f7c94b;font-size:.8rem;">!</div>
-      <div style="font-size:.72rem;color:#7b82a8;">Connection unstable</div>
-    </div>
-  </div>`,
-
-"Select vs. Combobox": `
-  <div style="display:flex;gap:20px;align-items:flex-start;justify-content:center;width:100%;height:100%;padding:16px;">
-    <div>
-      <div style="font-size:.62rem;color:#7b82a8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Select</div>
-      <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:7px;padding:8px 12px;width:120px;display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:#e8eaf6;">
-        Medium <span style="color:#7b82a8;">▾</span>
-      </div>
-      <div style="background:#1a1d27;border:1px solid #6c63ff;border-radius:7px;margin-top:2px;overflow:hidden;font-size:.72rem;">
-        ${['Low','Medium','High','Critical'].map((o,i)=>`<div style="padding:6px 12px;${i===1?'background:#22263a;color:#9b94ff;font-weight:600;':'color:#7b82a8;'}">${o}</div>`).join('')}
-      </div>
-    </div>
-    <div>
-      <div style="font-size:.62rem;color:#7b82a8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Combobox</div>
-      <div style="background:#1a1d27;border:1px solid #6c63ff;border-radius:7px;padding:7px 10px;width:130px;display:flex;align-items:center;gap:6px;font-size:.75rem;color:#7b82a8;">
-        🔍 <span>Search…</span>
-      </div>
-      <div style="background:#1a1d27;border:1px solid #2e3350;border-top:none;border-radius:0 0 7px 7px;font-size:.72rem;">
-        ${['React','Redux','Router','Relay'].map((o,i)=>`<div style="padding:5px 10px;${i===0?'background:#22263a;color:#9b94ff;':'color:#7b82a8;'}">${o}</div>`).join('')}
-      </div>
-    </div>
-  </div>`,
-
-"OTP Input": `
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:14px;">
-    <div style="font-size:.72rem;color:#7b82a8;margin-bottom:2px;">Enter verification code</div>
-    <div style="display:flex;gap:8px;">
-      ${['3','●','●','●','●','●'].map((v,i)=>`<div style="width:36px;height:44px;background:#1a1d27;border:1.5px solid ${i===0?'#6c63ff':'#2e3350'};border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:${i===0?'1rem':'.9rem'};color:${i===0?'#e8eaf6':'#7b82a8'};font-weight:600;">${v}</div>`).join('')}
-    </div>
-    <div style="font-size:.68rem;color:#7b82a8;">Auto-focuses next field on entry</div>
-  </div>`,
-
-"Switch": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;gap:32px;">
-    <div style="text-align:center;">
-      <div style="width:48px;height:26px;background:#22263a;border:1px solid #2e3350;border-radius:13px;position:relative;cursor:pointer;margin:0 auto 8px;">
-        <div style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#7b82a8;transition:all .2s;"></div>
-      </div>
-      <div style="font-size:.7rem;color:#7b82a8;">Off</div>
-    </div>
-    <div style="text-align:center;">
-      <div style="width:48px;height:26px;background:rgba(108,99,255,.3);border:1px solid #6c63ff;border-radius:13px;position:relative;cursor:pointer;margin:0 auto 8px;">
-        <div style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#6c63ff;transition:all .2s;"></div>
-      </div>
-      <div style="font-size:.7rem;color:#9b94ff;font-weight:600;">On</div>
-    </div>
-    <div>
-      <div style="font-size:.7rem;color:#7b82a8;line-height:1.8;">
-        <div>🔔 Notifications</div>
-        <div>🌙 Dark mode</div>
-        <div>📧 Emails</div>
-      </div>
-    </div>
-  </div>`,
-
-"Dropzone": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:16px;">
-    <div style="width:100%;border:2px dashed #2e3350;border-radius:10px;padding:24px;text-align:center;background:#111420;transition:all .2s;">
-      <div style="font-size:1.8rem;margin-bottom:8px;">☁</div>
-      <div style="font-size:.8rem;font-weight:600;color:#e8eaf6;margin-bottom:4px;">Drop files here</div>
-      <div style="font-size:.7rem;color:#7b82a8;margin-bottom:10px;">or click to browse</div>
-      <div style="display:inline-block;padding:5px 14px;background:#22263a;border:1px solid #2e3350;border-radius:6px;font-size:.7rem;color:#9b94ff;">Browse Files</div>
-    </div>
-  </div>`,
-
-"Radio Group": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;gap:24px;">
-    <div>
-      <div style="font-size:.68rem;color:#7b82a8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Subscription plan</div>
-      ${[['Free','Basic features',false],['Pro','All features',true],['Team','Up to 10 seats',false]].map(([l,s,checked])=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:${checked?'rgba(108,99,255,.08)':'transparent'};border-radius:6px;cursor:pointer;margin-bottom:4px;">
-          <div style="width:18px;height:18px;border-radius:50%;border:2px solid ${checked?'#6c63ff':'#2e3350'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            ${checked?`<div style="width:8px;height:8px;border-radius:50%;background:#6c63ff;"></div>`:''}
-          </div>
-          <div>
-            <div style="font-size:.75rem;color:${checked?'#e8eaf6':'#7b82a8'};font-weight:${checked?'600':'400'};">${l}</div>
-            <div style="font-size:.65rem;color:#7b82a8;">${s}</div>
-          </div>
-        </div>`).join('')}
-    </div>
-  </div>`,
-
-"Slider": `
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:20px;padding:0 32px;">
-    <div style="width:100%;">
-      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#7b82a8;margin-bottom:8px;"><span>Volume</span><span style="color:#9b94ff;font-weight:600;">65%</span></div>
-      <div style="position:relative;height:6px;background:#22263a;border-radius:3px;">
-        <div style="position:absolute;left:0;width:65%;height:100%;background:linear-gradient(to right,#6c63ff,#9b94ff);border-radius:3px;"></div>
-        <div style="position:absolute;left:65%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;background:#6c63ff;border-radius:50%;border:2px solid #9b94ff;box-shadow:0 0 0 3px rgba(108,99,255,.25);"></div>
-      </div>
-    </div>
-    <div style="width:100%;">
-      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#7b82a8;margin-bottom:8px;"><span>Price range</span><span style="color:#3ecf8e;font-weight:600;">$20 — $80</span></div>
-      <div style="position:relative;height:6px;background:#22263a;border-radius:3px;">
-        <div style="position:absolute;left:20%;width:60%;height:100%;background:linear-gradient(to right,#3ecf8e,#6c63ff);border-radius:3px;"></div>
-        <div style="position:absolute;left:20%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;background:#3ecf8e;border-radius:50%;border:2px solid #fff;"></div>
-        <div style="position:absolute;left:80%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;background:#6c63ff;border-radius:50%;border:2px solid #fff;"></div>
-      </div>
-    </div>
-  </div>`,
-
-"Table / Data Grid": `
-  <div style="padding:12px;width:100%;height:100%;overflow:hidden;">
-    <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:8px;overflow:hidden;font-size:.68rem;">
-      <div style="display:grid;grid-template-columns:1fr 80px 70px 60px;background:#22263a;border-bottom:1px solid #2e3350;">
-        ${['Name','Status','Date','↕'].map(h=>`<div style="padding:7px 10px;color:#7b82a8;font-weight:700;text-transform:uppercase;letter-spacing:.3px;">${h}</div>`).join('')}
-      </div>
-      ${[['Homepage redesign','#3ecf8e','In progress','Apr 2'],['API integration','#f7c94b','Review','Apr 1'],['User testing','#7b82a8','Done','Mar 30'],['Deploy to prod','#ff5c6a','Blocked','Apr 5']].map(([n,c,s,d])=>`
-        <div style="display:grid;grid-template-columns:1fr 80px 70px 60px;border-bottom:1px solid #2e3350;">
-          <div style="padding:7px 10px;color:#e8eaf6;">${n}</div>
-          <div style="padding:7px 10px;"><span style="background:${c}22;color:${c};padding:2px 7px;border-radius:10px;font-size:.63rem;font-weight:600;">${s}</span></div>
-          <div style="padding:7px 10px;color:#7b82a8;">${d}</div>
-          <div style="padding:7px 10px;color:#7b82a8;">⋮</div>
-        </div>`).join('')}
-    </div>
-  </div>`,
-
-"List / Feed": `
-  <div style="padding:12px;width:100%;height:100%;overflow:hidden;">
-    ${[['AJ','Alex J.','Shipped the new dashboard 🚀','2m','#6c63ff'],['SK','Sara K.','Left a comment on your PR','8m','#3ecf8e'],['MT','Mike T.','Merged branch feature/auth','15m','#f7c94b']].map(([i,n,msg,t,c])=>`
-      <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #2e3350;">
-        <div style="width:32px;height:32px;border-radius:50%;background:${c}33;border:1px solid ${c}55;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:${c};flex-shrink:0;">${i}</div>
-        <div style="flex:1;">
-          <div style="display:flex;justify-content:space-between;">
-            <span style="font-size:.73rem;font-weight:600;color:#e8eaf6;">${n}</span>
-            <span style="font-size:.65rem;color:#7b82a8;">${t} ago</span>
-          </div>
-          <div style="font-size:.7rem;color:#7b82a8;margin-top:1px;">${msg}</div>
+      list.innerHTML = data.map(n => `
+        <div class="note-card">
+          <div class="note-title">${escape(n.title)}</div>
+          <div class="note-body">${escape(n.body)}</div>
+          <div class="note-date">${new Date(n.created_at).toLocaleString()}</div>
         </div>
-      </div>`).join('')}
-  </div>`,
+      `).join('');
+    }
 
-"Carousel": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;gap:8px;padding:12px;">
-    <button style="width:28px;height:28px;border-radius:50%;background:#22263a;border:1px solid #2e3350;color:#9b94ff;font-size:.9rem;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
-    <div style="flex:1;background:#22263a;border:1px solid #2e3350;border-radius:8px;height:120px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
-      <div style="text-align:center;">
-        <div style="font-size:2rem;margin-bottom:4px;">🖼</div>
-        <div style="font-size:.72rem;color:#7b82a8;">Slide 2 of 5</div>
-      </div>
-    </div>
-    <button style="width:28px;height:28px;border-radius:50%;background:#22263a;border:1px solid #2e3350;color:#9b94ff;font-size:.9rem;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>
-    <div style="position:absolute;bottom:18px;display:flex;gap:5px;">
-      ${[0,1,2,3,4].map(i=>`<div style="width:${i===1?'18':'7'}px;height:7px;border-radius:4px;background:${i===1?'#6c63ff':'#2e3350'};transition:all .2s;"></div>`).join('')}
-    </div>
-  </div>`,
+    async function submitNote() {
+      const titleEl = document.getElementById('title');
+      const bodyEl = document.getElementById('body');
+      const btn = document.getElementById('submit-btn');
 
-"Tree View": `
-  <div style="padding:14px;width:100%;height:100%;font-size:.73rem;">
-    ${[
-      {d:0,label:'📁 src',open:true},
-      {d:1,label:'📁 components',open:true},
-      {d:2,label:'📄 Button.tsx'},
-      {d:2,label:'📄 Modal.tsx'},
-      {d:2,label:'📄 Input.tsx'},
-      {d:1,label:'📁 pages',open:false},
-      {d:1,label:'📄 App.tsx'},
-    ].map(n=>`<div style="padding:4px 0;padding-left:${n.d*16}px;color:${n.d===0||n.open?'#e8eaf6':'#7b82a8'};display:flex;align-items:center;gap:6px;">
-      ${n.open!==undefined?`<span style="font-size:.65rem;color:#7b82a8;">${n.open?'▾':'▸'}</span>`:'<span style="width:12px;"></span>'}
-      ${n.label}
-    </div>`).join('')}
-  </div>`,
+      const title = titleEl.value.trim();
+      const body = bodyEl.value.trim();
 
-"Calendar": `
-  <div style="padding:10px;width:100%;height:100%;">
-    <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:8px;padding:10px;font-size:.68rem;height:100%;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <span style="color:#7b82a8;">‹</span>
-        <span style="font-weight:600;color:#e8eaf6;">April 2026</span>
-        <span style="color:#7b82a8;">›</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;text-align:center;">
-        ${['S','M','T','W','T','F','S'].map(d=>`<div style="color:#7b82a8;padding:3px 0;font-weight:600;">${d}</div>`).join('')}
-        ${[...Array(6)].map(_=>'<div></div>').join('')}
-        ${[...Array(30)].map((_,i)=>{const d=i+1,t=d===13,sel=d===16;return`<div style="padding:4px 2px;border-radius:5px;${sel?'background:#6c63ff;color:#fff;font-weight:600;':t?'color:#6c63ff;font-weight:600;':'color:#7b82a8;'}">${d}</div>`}).join('')}
-      </div>
-    </div>
-  </div>`,
+      if (!title) { setStatus('Title is required.', 'error'); return; }
+      if (!body)  { setStatus('Body is required.', 'error'); return; }
 
-"Stat Card / KPI": `
-  <div style="display:flex;gap:10px;align-items:center;justify-content:center;width:100%;height:100%;padding:14px;">
-    ${[['Total Users','12,483','↑ 18%','#3ecf8e'],['Revenue','$84,210','↑ 7%','#6c63ff'],['Churn','2.4%','↓ 0.3%','#ff5c6a']].map(([l,v,t,c])=>`
-      <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:8px;padding:12px 14px;flex:1;text-align:center;">
-        <div style="font-size:.62rem;color:#7b82a8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">${l}</div>
-        <div style="font-size:1.1rem;font-weight:700;color:#e8eaf6;margin-bottom:4px;">${v}</div>
-        <div style="font-size:.68rem;color:${c};font-weight:600;">${t}</div>
-      </div>`).join('')}
-  </div>`,
+      btn.disabled = true;
+      setStatus('Posting…', '');
 
-"Date Picker": `
-  <div style="display:flex;align-items:flex-start;justify-content:center;width:100%;height:100%;padding:12px;gap:10px;">
-    <div>
-      <div style="background:#1a1d27;border:1px solid #6c63ff;border-radius:7px;padding:8px 12px;width:150px;display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:#e8eaf6;margin-bottom:4px;">
-        📅 Apr 16, 2026 <span style="color:#7b82a8;">▾</span>
-      </div>
-      <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:8px;padding:8px;width:150px;font-size:.63rem;">
-        <div style="display:flex;justify-content:space-between;color:#7b82a8;margin-bottom:6px;"><span>‹</span><span style="color:#e8eaf6;font-weight:600;">April</span><span>›</span></div>
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:1px;color:#7b82a8;">
-          ${['S','M','T','W','T','F','S'].map(d=>`<div style="font-weight:600;padding-bottom:2px;">${d}</div>`).join('')}
-          ${[...Array(5)].map(_=>'<div></div>').join('')}
-          ${[...Array(16)].map((_,i)=>{const d=i+1,sel=d===16;return`<div style="padding:2px;border-radius:3px;${sel?'background:#6c63ff;color:#fff;font-weight:700;':''}">${d}</div>`}).join('')}
-        </div>
-      </div>
-    </div>
-  </div>`,
+      const { error } = await db.from('notes').insert({ title, body });
 
-"Command Palette": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:14px;">
-    <div style="width:100%;background:#1a1d27;border:1px solid #6c63ff;border-radius:10px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6);">
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #2e3350;">
-        <span style="color:#7b82a8;">🔍</span>
-        <span style="font-size:.8rem;color:#7b82a8;">Search actions… <span style="animation:blink 1s infinite;">|</span></span>
-        <span style="margin-left:auto;background:#22263a;border:1px solid #2e3350;border-radius:4px;padding:2px 6px;font-size:.65rem;color:#7b82a8;">⌘K</span>
-      </div>
-      ${[['📝','New document','Create'],['📁','Open project','Navigate'],['⚙️','Settings','Go to'],['🚀','Deploy','Action']].map(([ic,l,c])=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid #2e3350;font-size:.73rem;">
-          <span>${ic}</span>
-          <span style="color:#e8eaf6;flex:1;">${l}</span>
-          <span style="font-size:.62rem;color:#7b82a8;">${c}</span>
-        </div>`).join('')}
-    </div>
-  </div>`,
+      if (error) {
+        setStatus('Error: ' + escape(error.message), 'error');
+        btn.disabled = false;
+        return;
+      }
 
-"Tag Input": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:16px;">
-    <div style="width:100%;">
-      <div style="font-size:.68rem;color:#7b82a8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Skills</div>
-      <div style="background:#1a1d27;border:1px solid #6c63ff;border-radius:8px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:42px;">
-        ${['React','TypeScript','Figma'].map(t=>`<div style="background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.4);border-radius:20px;padding:3px 10px;font-size:.7rem;color:#9b94ff;display:flex;align-items:center;gap:5px;">${t} <span style="color:#7b82a8;cursor:pointer;font-size:.65rem;">✕</span></div>`).join('')}
-        <span style="font-size:.75rem;color:#7b82a8;animation:blink 1.2s infinite;">|</span>
-      </div>
-      <div style="font-size:.65rem;color:#7b82a8;margin-top:5px;">Type and press Enter to add a tag</div>
-    </div>
-  </div>`,
+      titleEl.value = '';
+      bodyEl.value = '';
+      setStatus('Note posted!', 'success');
+      btn.disabled = false;
+      await loadNotes();
+      setTimeout(() => setStatus('', ''), 3000);
+    }
 
-"Rich Text Editor": `
-  <div style="padding:10px;width:100%;height:100%;">
-    <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:8px;overflow:hidden;height:100%;display:flex;flex-direction:column;">
-      <div style="display:flex;gap:2px;padding:7px 10px;border-bottom:1px solid #2e3350;background:#22263a;flex-wrap:wrap;">
-        ${['B','I','U','S','|','H1','H2','|','≡','•','1.','|','🔗','🖼','|','↩','↪'].map(t=>`<div style="padding:3px 6px;border-radius:4px;font-size:.7rem;color:${t==='|'?'#2e3350':t==='B'?'#e8eaf6':'#7b82a8'};font-weight:${t==='B'?'700':'400'};background:${t==='B'?'rgba(108,99,255,.2)':'transparent'};cursor:pointer;">${t}</div>`).join('')}
-      </div>
-      <div style="flex:1;padding:10px;font-size:.75rem;line-height:1.7;color:#e8eaf6;">
-        <strong style="font-weight:700;">Getting started</strong><br>
-        <span style="color:#7b82a8;">Welcome to the rich text editor. You can <em style="font-style:italic;color:#9b94ff;">format text</em>, add </span><span style="text-decoration:underline;color:#6c63ff;">links</span><span style="color:#7b82a8;">, and more.</span>
-      </div>
-    </div>
-  </div>`,
+    function setStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status' + (type ? ' ' + type : '');
+    }
 
-"Rating": `
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:16px;">
-    <div>
-      <div style="font-size:.68rem;color:#7b82a8;text-align:center;margin-bottom:8px;">How was your experience?</div>
-      <div style="display:flex;gap:4px;justify-content:center;">
-        ${[1,2,3,4,5].map(i=>`<span style="font-size:1.6rem;cursor:pointer;color:${i<=4?'#f7c94b':'#2e3350'};filter:${i<=4?'none':'grayscale(1)'};transition:all .15s;">★</span>`).join('')}
-      </div>
-      <div style="font-size:.7rem;color:#f7c94b;text-align:center;margin-top:6px;font-weight:600;">4.0 / 5.0 · 128 reviews</div>
-    </div>
-  </div>`,
-
-"Stepper / Wizard": `
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:14px;gap:16px;">
-    <div style="display:flex;align-items:center;width:100%;max-width:320px;">
-      ${[['Account','✓',true,true],['Plan','2',true,false],['Payment','3',false,false]].map(([l,n,done,active],i,arr)=>`
-        <div style="display:flex;align-items:center;flex:1;">
-          <div style="text-align:center;">
-            <div style="width:30px;height:30px;border-radius:50%;background:${done&&!active?'#3ecf8e':active?'#6c63ff':'#22263a'};border:2px solid ${done&&!active?'#3ecf8e':active?'#6c63ff':'#2e3350'};display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;margin:0 auto 4px;">${n}</div>
-            <div style="font-size:.62rem;color:${active?'#9b94ff':done?'#3ecf8e':'#7b82a8'};white-space:nowrap;">${l}</div>
-          </div>
-          ${i<arr.length-1?`<div style="flex:1;height:2px;background:${done&&!active?'#3ecf8e':'#2e3350'};margin:0 6px;margin-bottom:14px;"></div>`:''}
-        </div>`).join('')}
-    </div>
-    <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:8px;padding:12px 16px;width:100%;max-width:320px;">
-      <div style="font-size:.78rem;font-weight:600;color:#e8eaf6;margin-bottom:8px;">Choose your plan</div>
-      <div style="display:flex;gap:8px;">
-        <div style="flex:1;border:2px solid #6c63ff;border-radius:6px;padding:7px 10px;background:rgba(108,99,255,.08);"><div style="font-size:.72rem;font-weight:600;color:#9b94ff;">Pro</div><div style="font-size:.65rem;color:#7b82a8;">$12/mo</div></div>
-        <div style="flex:1;border:1px solid #2e3350;border-radius:6px;padding:7px 10px;"><div style="font-size:.72rem;color:#7b82a8;">Team</div><div style="font-size:.65rem;color:#7b82a8;">$49/mo</div></div>
-      </div>
-    </div>
-  </div>`,
-
-"Sidebar": `
-  <div style="display:flex;width:100%;height:100%;">
-    <div style="width:140px;background:#1a1d27;border-right:1px solid #2e3350;padding:12px 0;flex-shrink:0;display:flex;flex-direction:column;">
-      <div style="padding:8px 14px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#7b82a8;margin-bottom:4px;">Navigation</div>
-      ${[['⊞','Dashboard',true],['📁','Projects',false],['👥','Team',false],['📊','Analytics',false],['⚙','Settings',false]].map(([ic,l,a])=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:.73rem;cursor:pointer;background:${a?'rgba(108,99,255,.15)':'transparent'};border-right:${a?'2px solid #6c63ff':'2px solid transparent'};color:${a?'#9b94ff':'#7b82a8'};">
-          <span>${ic}</span><span style="font-weight:${a?'600':'400'}">${l}</span>
-        </div>`).join('')}
-    </div>
-    <div style="flex:1;padding:14px;background:#111420;">
-      <div style="height:14px;background:#22263a;border-radius:4px;width:60%;margin-bottom:10px;"></div>
-      <div style="height:8px;background:#1a1d27;border-radius:4px;width:90%;margin-bottom:6px;"></div>
-      <div style="height:8px;background:#1a1d27;border-radius:4px;width:75%;"></div>
-    </div>
-  </div>`,
-
-"Card": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:14px;gap:12px;">
-    <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:10px;overflow:hidden;width:200px;">
-      <div style="height:60px;background:linear-gradient(135deg,#1e1b4b,#312e81);display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🚀</div>
-      <div style="padding:12px;">
-        <div style="font-size:.78rem;font-weight:700;color:#e8eaf6;margin-bottom:4px;">Launch Checklist</div>
-        <div style="font-size:.68rem;color:#7b82a8;margin-bottom:10px;line-height:1.4;">Everything you need before going live.</div>
-        <div style="display:flex;gap:6px;">
-          <div style="flex:1;padding:5px;background:#6c63ff;border-radius:5px;font-size:.65rem;color:#fff;text-align:center;font-weight:600;">Start</div>
-          <div style="flex:1;padding:5px;background:#22263a;border:1px solid #2e3350;border-radius:5px;font-size:.65rem;color:#7b82a8;text-align:center;">Save</div>
-        </div>
-      </div>
-    </div>
-  </div>`,
-
-"Masonry Grid": `
-  <div style="padding:12px;width:100%;height:100%;display:flex;gap:8px;">
-    <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
-      <div style="background:#22263a;border:1px solid #2e3350;border-radius:7px;height:70px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🖼</div>
-      <div style="background:#22263a;border:1px solid #2e3350;border-radius:7px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1rem;">📸</div>
-      <div style="background:#22263a;border:1px solid #2e3350;border-radius:7px;height:55px;display:flex;align-items:center;justify-content:center;font-size:1rem;">🎨</div>
-    </div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
-      <div style="background:#22263a;border:1px solid #2e3350;border-radius:7px;height:45px;display:flex;align-items:center;justify-content:center;font-size:1rem;">🌅</div>
-      <div style="background:#22263a;border:1px solid #2e3350;border-radius:7px;height:65px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🎭</div>
-      <div style="background:#22263a;border:1px solid #2e3350;border-radius:7px;height:45px;display:flex;align-items:center;justify-content:center;font-size:1rem;">🌿</div>
-    </div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
-      <div style="background:#22263a;border:1px solid #2e3350;border-radius:7px;height:55px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">⚡</div>
-      <div style="background:#22263a;border:1px solid #2e3350;border-radius:7px;height:75px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">🏔</div>
-      <div style="background:#22263a;border:1px solid #2e3350;border-radius:7px;height:30px;display:flex;align-items:center;justify-content:center;font-size:.9rem;">🌊</div>
-    </div>
-  </div>`,
-
-"Tabs": `
-  <div style="width:100%;height:100%;padding:12px;">
-    <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:9px;overflow:hidden;height:100%;display:flex;flex-direction:column;">
-      <div style="display:flex;border-bottom:1px solid #2e3350;background:#111420;">
-        ${[['Overview',true],['Analytics',false],['Settings',false],['Logs',false]].map(([l,a])=>`
-          <div style="padding:10px 14px;font-size:.73rem;font-weight:${a?'600':'400'};color:${a?'#e8eaf6':'#7b82a8'};border-bottom:${a?'2px solid #6c63ff':'2px solid transparent'};cursor:pointer;white-space:nowrap;">${l}</div>`).join('')}
-      </div>
-      <div style="flex:1;padding:12px;">
-        <div style="height:10px;background:#22263a;border-radius:4px;width:70%;margin-bottom:8px;"></div>
-        <div style="display:flex;gap:8px;">
-          ${[40,90,60,75].map(h=>`<div style="flex:1;height:${h}px;background:linear-gradient(to top,rgba(108,99,255,.3),rgba(108,99,255,.05));border-radius:5px 5px 0 0;border-bottom:2px solid #6c63ff;"></div>`).join('')}
-        </div>
-      </div>
-    </div>
-  </div>`,
-
-"Breadcrumbs": `
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:16px;">
-    <div style="display:flex;align-items:center;gap:6px;font-size:.78rem;">
-      <span style="color:#6c63ff;cursor:pointer;text-decoration:underline;">Home</span>
-      <span style="color:#2e3350;">›</span>
-      <span style="color:#6c63ff;cursor:pointer;text-decoration:underline;">Products</span>
-      <span style="color:#2e3350;">›</span>
-      <span style="color:#6c63ff;cursor:pointer;text-decoration:underline;">Electronics</span>
-      <span style="color:#2e3350;">›</span>
-      <span style="color:#e8eaf6;font-weight:600;">Headphones</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;font-size:.75rem;">
-      <span style="color:#7b82a8;">🏠</span>
-      <span style="color:#2e3350;">/</span>
-      <span style="color:#7b82a8;">Settings</span>
-      <span style="color:#2e3350;">/</span>
-      <span style="color:#7b82a8;">Security</span>
-      <span style="color:#2e3350;">/</span>
-      <span style="color:#e8eaf6;">Two-Factor Auth</span>
-    </div>
-    <div style="font-size:.68rem;color:#7b82a8;text-align:center;">Shows user's location in the hierarchy</div>
-  </div>`,
-
-"Accordion": `
-  <div style="padding:12px;width:100%;height:100%;">
-    <div style="font-size:.65rem;color:#7b82a8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">FAQ</div>
-    ${[
-      ['How does billing work?', 'You are billed monthly. Cancel anytime.', true],
-      ['Can I export my data?', '', false],
-      ['Is there a free trial?', '', false],
-    ].map(([q,a,open])=>`
-      <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:8px;margin-bottom:6px;overflow:hidden;">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;">
-          <span style="font-size:.75rem;font-weight:${open?'600':'400'};color:${open?'#e8eaf6':'#7b82a8'};">${q}</span>
-          <span style="color:#7b82a8;font-size:.7rem;transition:transform .2s;transform:${open?'rotate(180deg)':'rotate(0)'}">${open?'▲':'▾'}</span>
-        </div>
-        ${open?`<div style="padding:0 14px 10px;font-size:.72rem;color:#7b82a8;border-top:1px solid #2e3350;line-height:1.5;padding-top:8px;">${a}</div>`:''}
-      </div>`).join('')}
-  </div>`,
-
-"Context Menu": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;position:relative;">
-    <div style="background:#22263a;border:1px dashed #2e3350;border-radius:8px;padding:14px;font-size:.72rem;color:#7b82a8;text-align:center;">Right-click<br>area</div>
-    <div style="position:absolute;top:30px;left:120px;background:#1a1d27;border:1px solid #2e3350;border-radius:8px;padding:4px;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:pop .2s ease;">
-      ${[['✏️','Edit',''],['📋','Copy','⌘C'],['📌','Pin',''],['─','',''],['🗑','Delete','⌦']].map(([ic,l,k])=>l==='─'?`<div style="height:1px;background:#2e3350;margin:3px 0;"></div>`:`
-        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:5px;cursor:pointer;font-size:.72rem;">
-          <span>${ic}</span><span style="flex:1;color:#e8eaf6;">${l}</span>${k?`<span style="font-size:.62rem;color:#7b82a8;">${k}</span>`:''}
-        </div>`).join('')}
-    </div>
-  </div>`,
-
-"Drag & Drop": `
-  <div style="padding:12px;width:100%;height:100%;">
-    <div style="font-size:.65rem;color:#7b82a8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Task Priority</div>
-    ${[['⠿','Design mockups','#6c63ff',false,true],['⠿','Write tests','#3ecf8e',true,false],['⠿','Deploy to staging','#f7c94b',false,false]].map(([h,l,c,dragging,active])=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:${dragging?'rgba(108,99,255,.15)':'#1a1d27'};border:1.5px ${dragging?'dashed':'solid'} ${dragging?'#6c63ff':'#2e3350'};border-radius:7px;margin-bottom:6px;opacity:${dragging?'.7':'1'};cursor:grab;">
-        <span style="color:#2e3350;font-size:1rem;cursor:grab;">${h}</span>
-        <div style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0;"></div>
-        <span style="font-size:.73rem;color:${active?'#e8eaf6':'#7b82a8'};flex:1;">${l}</span>
-        ${dragging?`<span style="font-size:.62rem;color:#6c63ff;">dragging…</span>`:''}
-      </div>`).join('')}
-  </div>`,
-
-"Lightbox": `
-  <div style="position:relative;width:100%;height:100%;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;">
-    <div style="position:absolute;top:10px;right:14px;color:rgba(255,255,255,.5);font-size:.75rem;cursor:pointer;">✕ Close</div>
-    <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.4);font-size:1.2rem;cursor:pointer;">‹</div>
-    <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.4);font-size:1.2rem;cursor:pointer;">›</div>
-    <div style="background:#22263a;border:1px solid #2e3350;border-radius:8px;width:160px;height:110px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;">
-      <div style="font-size:2rem;">🏔</div>
-      <div style="font-size:.65rem;color:#7b82a8;">Mountain View · 2 of 8</div>
-    </div>
-    <div style="position:absolute;bottom:10px;display:flex;gap:5px;">
-      ${[0,1,2,3].map(i=>`<div style="width:${i===1?'20':'6'}px;height:6px;border-radius:3px;background:${i===1?'#fff':'rgba(255,255,255,.25)'};"></div>`).join('')}
-    </div>
-  </div>`,
-
-"Infinite Scroll": `
-  <div style="padding:12px;width:100%;height:100%;overflow:hidden;">
-    <div style="font-size:.65rem;color:#7b82a8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Results</div>
-    ${[1,2,3].map(i=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #2e3350;">
-        <div style="width:32px;height:32px;border-radius:6px;background:#22263a;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.8rem;">${['📦','🎯','⚡'][i-1]}</div>
-        <div style="flex:1;">
-          <div style="height:9px;background:#22263a;border-radius:4px;width:${[75,90,65][i-1]}%;margin-bottom:5px;"></div>
-          <div style="height:7px;background:#1a1d27;border-radius:4px;width:${[50,70,45][i-1]}%;"></div>
-        </div>
-      </div>`).join('')}
-    <div style="text-align:center;padding:10px 0;display:flex;align-items:center;justify-content:center;gap:8px;">
-      <div style="width:16px;height:16px;border-radius:50%;border:2px solid #6c63ff;border-top-color:transparent;animation:spin .8s linear infinite;"></div>
-      <span style="font-size:.7rem;color:#7b82a8;">Loading more…</span>
-    </div>
-  </div>`,
-
-"Alert": `
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:10px;padding:14px;">
-    <div style="width:100%;background:rgba(62,207,142,.1);border:1px solid rgba(62,207,142,.35);border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;">
-      <span style="color:#3ecf8e;font-size:1rem;flex-shrink:0;">✓</span>
-      <div><div style="font-size:.75rem;font-weight:600;color:#3ecf8e;margin-bottom:2px;">Account verified</div><div style="font-size:.7rem;color:#7b82a8;">Your identity has been confirmed.</div></div>
-    </div>
-    <div style="width:100%;background:rgba(247,201,75,.1);border:1px solid rgba(247,201,75,.35);border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;">
-      <span style="color:#f7c94b;font-size:1rem;flex-shrink:0;">⚠</span>
-      <div><div style="font-size:.75rem;font-weight:600;color:#f7c94b;margin-bottom:2px;">Storage nearly full</div><div style="font-size:.7rem;color:#7b82a8;">You've used 90% of your quota.</div></div>
-    </div>
-    <div style="width:100%;background:rgba(255,92,106,.1);border:1px solid rgba(255,92,106,.35);border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;">
-      <span style="color:#ff5c6a;font-size:1rem;flex-shrink:0;">✕</span>
-      <div><div style="font-size:.75rem;font-weight:600;color:#ff5c6a;margin-bottom:2px;">Payment failed</div><div style="font-size:.7rem;color:#7b82a8;">Please update your billing info.</div></div>
-    </div>
-  </div>`,
-
-"Empty State": `
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;text-align:center;padding:14px;">
-    <div style="width:60px;height:60px;border-radius:12px;background:#22263a;border:1px solid #2e3350;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:12px;">📂</div>
-    <div style="font-size:.85rem;font-weight:600;color:#e8eaf6;margin-bottom:5px;">No projects yet</div>
-    <div style="font-size:.72rem;color:#7b82a8;margin-bottom:14px;max-width:200px;line-height:1.5;">Get started by creating your first project.</div>
-    <div style="background:#6c63ff;border-radius:7px;padding:7px 18px;font-size:.75rem;font-weight:600;color:#fff;cursor:pointer;">+ New Project</div>
-  </div>`,
-
-"Badge": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;gap:28px;">
-    <div style="position:relative;text-align:center;">
-      <div style="width:40px;height:40px;border-radius:10px;background:#22263a;border:1px solid #2e3350;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🔔</div>
-      <div style="position:absolute;top:-6px;right:-8px;background:#ff5c6a;border-radius:10px;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff;border:2px solid #111420;padding:0 3px;">12</div>
-    </div>
-    <div style="position:relative;text-align:center;">
-      <div style="width:40px;height:40px;border-radius:10px;background:#22263a;border:1px solid #2e3350;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">📧</div>
-      <div style="position:absolute;top:-6px;right:-8px;background:#6c63ff;border-radius:10px;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff;border:2px solid #111420;padding:0 3px;">3</div>
-    </div>
-    <div style="text-align:center;">
-      <span style="background:rgba(62,207,142,.15);color:#3ecf8e;border-radius:20px;padding:4px 10px;font-size:.7rem;font-weight:600;">Live</span><br>
-      <span style="display:inline-block;margin-top:6px;background:rgba(247,201,75,.15);color:#f7c94b;border-radius:20px;padding:4px 10px;font-size:.7rem;font-weight:600;">Beta</span>
-    </div>
-  </div>`,
-
-"Avatar Group": `
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:14px;">
-    <div style="display:flex;align-items:center;">
-      ${[['AJ','#6c63ff'],['SK','#3ecf8e'],['MT','#f7c94b'],['LR','#ff5c6a'],['PK','#9b94ff']].map(([i,c],idx)=>`
-        <div style="width:38px;height:38px;border-radius:50%;background:${c}33;border:2px solid #111420;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:${c};margin-left:${idx?'-10px':'0'};position:relative;z-index:${5-idx};">${i}</div>`).join('')}
-      <div style="width:38px;height:38px;border-radius:50%;background:#22263a;border:2px solid #111420;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#7b82a8;margin-left:-10px;">+8</div>
-    </div>
-    <div style="font-size:.72rem;color:#7b82a8;">13 team members</div>
-  </div>`,
-
-"Timeline": `
-  <div style="padding:12px 20px;width:100%;height:100%;overflow:hidden;">
-    ${[['🚀','Deployed v2.0','10 min ago','#6c63ff'],['✓','PR merged','1 hr ago','#3ecf8e'],['💬','Review requested','3 hrs ago','#f7c94b'],['⚙','Build started','5 hrs ago','#7b82a8']].map(([ic,l,t,c],i,arr)=>`
-      <div style="display:flex;gap:12px;align-items:flex-start;${i<arr.length-1?'padding-bottom:12px;':''}">
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <div style="width:28px;height:28px;border-radius:50%;background:${c}22;border:1.5px solid ${c};display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;">${ic}</div>
-          ${i<arr.length-1?`<div style="width:1.5px;flex:1;background:linear-gradient(${c},#2e3350);margin:3px 0;min-height:12px;"></div>`:''}
-        </div>
-        <div style="padding-top:4px;">
-          <div style="font-size:.73rem;color:#e8eaf6;font-weight:500;">${l}</div>
-          <div style="font-size:.65rem;color:#7b82a8;">${t}</div>
-        </div>
-      </div>`).join('')}
-  </div>`,
-
-"Skeleton": `
-  <div style="padding:14px;width:100%;height:100%;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-      <div style="width:40px;height:40px;border-radius:50%;background:#22263a;animation:pulse 1.5s ease-in-out infinite;"></div>
-      <div style="flex:1;">
-        <div style="height:10px;background:#22263a;border-radius:5px;width:60%;margin-bottom:7px;animation:pulse 1.5s ease-in-out infinite;"></div>
-        <div style="height:8px;background:#22263a;border-radius:5px;width:40%;animation:pulse 1.5s ease-in-out .15s infinite;"></div>
-      </div>
-    </div>
-    <div style="height:8px;background:#22263a;border-radius:5px;width:100%;margin-bottom:8px;animation:pulse 1.5s ease-in-out .1s infinite;"></div>
-    <div style="height:8px;background:#22263a;border-radius:5px;width:85%;margin-bottom:8px;animation:pulse 1.5s ease-in-out .2s infinite;"></div>
-    <div style="height:8px;background:#22263a;border-radius:5px;width:90%;margin-bottom:8px;animation:pulse 1.5s ease-in-out .3s infinite;"></div>
-    <div style="height:8px;background:#22263a;border-radius:5px;width:70%;animation:pulse 1.5s ease-in-out .4s infinite;"></div>
-    <div style="display:flex;gap:8px;margin-top:14px;">
-      <div style="flex:1;height:30px;background:#22263a;border-radius:7px;animation:pulse 1.5s ease-in-out .2s infinite;"></div>
-      <div style="flex:1;height:30px;background:#22263a;border-radius:7px;animation:pulse 1.5s ease-in-out .35s infinite;"></div>
-    </div>
-  </div>`,
-
-"Progress Bar": `
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:18px;padding:0 28px;">
-    <div style="width:100%;">
-      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#7b82a8;margin-bottom:7px;"><span>Upload</span><span style="color:#6c63ff;font-weight:600;">73%</span></div>
-      <div style="height:8px;background:#22263a;border-radius:4px;overflow:hidden;">
-        <div style="height:100%;width:73%;background:linear-gradient(to right,#6c63ff,#9b94ff);border-radius:4px;"></div>
-      </div>
-    </div>
-    <div style="width:100%;">
-      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#7b82a8;margin-bottom:7px;"><span>Storage</span><span style="color:#f7c94b;font-weight:600;">91%</span></div>
-      <div style="height:8px;background:#22263a;border-radius:4px;overflow:hidden;">
-        <div style="height:100%;width:91%;background:linear-gradient(to right,#f7c94b,#ff5c6a);border-radius:4px;"></div>
-      </div>
-    </div>
-    <div style="width:100%;">
-      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:#7b82a8;margin-bottom:7px;"><span>Onboarding</span><span style="color:#3ecf8e;font-weight:600;">40%</span></div>
-      <div style="height:8px;background:#22263a;border-radius:4px;overflow:hidden;">
-        <div style="height:100%;width:40%;background:#3ecf8e;border-radius:4px;"></div>
-      </div>
-    </div>
-  </div>`,
-
-"Hero Section": `
-  <div style="width:100%;height:100%;background:linear-gradient(135deg,#0f1117 0%,#1a1d40 50%,#0f1117 100%);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-    <div style="position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:200px;height:200px;border-radius:50%;background:rgba(108,99,255,.08);"></div>
-    <div style="text-align:center;position:relative;z-index:1;padding:14px;">
-      <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:1px;color:#6c63ff;margin-bottom:6px;font-weight:600;">✦ New: AI-powered features</div>
-      <div style="font-size:1.15rem;font-weight:700;color:#e8eaf6;line-height:1.3;margin-bottom:6px;">Build products<br><span style="color:#9b94ff;">10× faster</span></div>
-      <div style="font-size:.7rem;color:#7b82a8;margin-bottom:14px;max-width:220px;line-height:1.4;">The platform that scales with your team. Start free, ship fast.</div>
-      <div style="display:flex;gap:8px;justify-content:center;">
-        <div style="background:#6c63ff;border-radius:7px;padding:7px 16px;font-size:.72rem;font-weight:700;color:#fff;cursor:pointer;">Get Started →</div>
-        <div style="background:rgba(255,255,255,.05);border:1px solid #2e3350;border-radius:7px;padding:7px 14px;font-size:.72rem;color:#7b82a8;cursor:pointer;">Watch Demo</div>
-      </div>
-    </div>
-  </div>`,
-
-"Testimonial": `
-  <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:16px;">
-    <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:10px;padding:18px;width:100%;max-width:340px;">
-      <div style="display:flex;gap:2px;margin-bottom:10px;">
-        ${[1,2,3,4,5].map(_=>`<span style="color:#f7c94b;font-size:.9rem;">★</span>`).join('')}
-      </div>
-      <div style="font-size:.78rem;color:#e8eaf6;line-height:1.6;font-style:italic;margin-bottom:14px;">"This tool saved our team weeks. I shipped my first app in a single afternoon — no engineering background required."</div>
-      <div style="display:flex;align-items:center;gap:10px;border-top:1px solid #2e3350;padding-top:12px;">
-        <div style="width:34px;height:34px;border-radius:50%;background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.4);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#9b94ff;flex-shrink:0;">SL</div>
-        <div>
-          <div style="font-size:.75rem;font-weight:600;color:#e8eaf6;">Sarah L.</div>
-          <div style="font-size:.65rem;color:#7b82a8;">Product Manager @ Stripe</div>
-        </div>
-      </div>
-    </div>
-  </div>`,
-
-"FAQ": `
-  <div style="padding:10px;width:100%;height:100%;">
-    <div style="font-size:.65rem;color:#7b82a8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Frequently Asked Questions</div>
-    ${[
-      ['Is there a free plan?', 'Yes — free forever for solo users. No credit card required.', true],
-      ['Can I cancel anytime?', null, false],
-      ['Do you offer discounts?', null, false],
-    ].map(([q,a,open])=>`
-      <div style="background:#1a1d27;border:1px solid #2e3350;border-radius:8px;margin-bottom:6px;overflow:hidden;">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;">
-          <span style="font-size:.73rem;font-weight:${open?'600':'400'};color:${open?'#e8eaf6':'#7b82a8'};">❓ ${q}</span>
-          <span style="color:#7b82a8;font-size:.7rem;">${open?'▲':'▾'}</span>
-        </div>
-        ${open?`<div style="padding:0 12px 9px;font-size:.7rem;color:#7b82a8;border-top:1px solid #2e3350;padding-top:7px;line-height:1.5;">${a}</div>`:''}
-      </div>`).join('')}
-  </div>`,
-
-};
-
-// ── Add @keyframes spin for infinite scroll spinner ──
-const style = document.createElement('style');
-style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
-document.head.appendChild(style);
-
-// ─────────────────────────────────────────────
-// DATA
-// ─────────────────────────────────────────────
-const TERMS = [
-  {title:"Modal (Dialog)",     definition:"Overlay window that blocks background interaction.",vibeTip:"Use 'Dialog' for Shadcn. Specify 'Focus Trap' & 'Backdrop'.",comparison:"Modal blocks. Popover allows outside click."},
-  {title:"Drawer (Sheet)",     definition:"Edge-anchored panel overlay.",vibeTip:"Keyword: 'Sheet'.",comparison:"Drawer slides. Sidebar pushes."},
-  {title:"Popover",            definition:"Floating card triggered by a button.",vibeTip:"Use for interactive content.",comparison:"Popover = container. Tooltip = read-only."},
-  {title:"Tooltip",            definition:"Hover-triggered info text.",vibeTip:"No links inside tooltips.",comparison:"Tooltip vanishes on move."},
-  {title:"Toast",              definition:"Temporary feedback message.",vibeTip:"Use Toaster provider.",comparison:"Toast floats. Alert is static."},
-  {title:"Select vs. Combobox",definition:"Select: simple dropdown. Combobox: searchable list.",vibeTip:"List > 10 items? Use Combobox/Command Palette.",comparison:"Select is for picking. Popover is for housing UI."},
-  {title:"OTP Input",          definition:"Segmented code input for one-time passwords.",vibeTip:"Request auto-focus on each segment.",comparison:"OTP vs plain text field."},
-  {title:"Switch",             definition:"Immediate binary toggle for settings.",vibeTip:"Settings only — not for form data.",comparison:"Switch changes state. Checkbox stores data."},
-  {title:"Dropzone",           definition:"Drag & Drop file upload area.",vibeTip:"Include active drag states.",comparison:"Dropzone accepts files. Sortable reorders items."},
-  {title:"Radio Group",        definition:"Single selection from a fixed list of options.",vibeTip:"Use for fewer than 5 items. More? Use Select.",comparison:"Radio is exclusive (OR). Checkbox is inclusive (AND)."},
-  {title:"Slider",             definition:"Range selection input via draggable handle.",vibeTip:"Dual handles for 'Range Slider'.",comparison:"Slider is input. Progress Bar is read-only."},
-  {title:"Table / Data Grid",  definition:"Structured rows and columns for displaying data sets with optional sorting, filtering, and pagination.",vibeTip:"Use 'DataTable' for Shadcn. Specify column definitions and row actions.",comparison:"Table for structured data. List for mixed content feeds."},
-  {title:"List / Feed",        definition:"Vertical stream of content items, like a social feed or activity log.",vibeTip:"Use virtualized list for large datasets.",comparison:"List is for mixed content. Table is for structured columnar data."},
-  {title:"Carousel",           definition:"Horizontally scrollable content with navigation controls.",vibeTip:"Specify 'Embla' or 'Swiper'. Always include keyboard navigation.",comparison:"Carousel scrolls horizontally. Gallery shows a grid."},
-  {title:"Tree View",          definition:"Hierarchical nested list for file explorers, org charts, and nested navigation.",vibeTip:"Request 'expandable/collapsible nodes' and keyboard arrow navigation.",comparison:"Tree is for hierarchy. Accordion is for flat sections."},
-  {title:"Calendar",           definition:"Month/week/day view for displaying dates, scheduling, and event management.",vibeTip:"Use 'Calendar' for display, 'DatePicker' when selecting.",comparison:"Calendar displays. DatePicker selects. Scheduler manages events."},
-  {title:"Stat Card / KPI",    definition:"Dashboard metric display showing a number, label, trend indicator, and optional sparkline.",vibeTip:"Specify 'up/down trend arrows' and 'percentage change'.",comparison:"Stat Card is for single metrics. Dashboard is a full layout."},
-  {title:"Date Picker",        definition:"Input control for selecting dates with a dropdown calendar.",vibeTip:"Use 'DatePicker' for single dates, 'DateRangePicker' for ranges.",comparison:"DatePicker selects. Calendar displays. TimePicker handles time."},
-  {title:"Command Palette",    definition:"Keyboard-first search interface triggered by Cmd+K for actions, navigation, and settings.",vibeTip:"Use 'cmdk' library for React. Group commands by category.",comparison:"Command Palette is for actions. Search Bar is for content."},
-  {title:"Tag Input",          definition:"Multi-value text input that converts entries into removable tags or chips.",vibeTip:"Specify 'backspace to delete' and 'autocomplete suggestions'.",comparison:"Tag Input adds multiple values. Multi-Select picks from a fixed list."},
-  {title:"Rich Text Editor",   definition:"Content editing with formatting controls — bold, italic, lists, links, images.",vibeTip:"Use 'Tiptap' or 'Slate' for React. Specify toolbar buttons.",comparison:"Rich Text for formatted content. Textarea for plain text."},
-  {title:"Rating",             definition:"User feedback input using stars, thumbs, or emoji scale.",vibeTip:"Specify 'star count', 'half stars', and 'hover preview'.",comparison:"Rating captures sentiment. Slider captures numeric ranges."},
-  {title:"Stepper / Wizard",   definition:"Multi-step form with progress indicator breaking complex tasks into sequential steps.",vibeTip:"Specify 'step validation', 'back/next buttons'.",comparison:"Stepper is sequential. Tabs are parallel. Accordion is expandable."},
-  {title:"Sidebar",            definition:"Full navigation panel, often collapsible.",vibeTip:"Always specify collapsible behavior.",comparison:"Sidebar pushes content. Drawer overlays."},
-  {title:"Card",               definition:"Self-contained content container with optional header, body, and footer.",vibeTip:"Specify Header/Content/Footer slots.",comparison:"Card is a container. Tile is tighter and grid-based."},
-  {title:"Masonry Grid",       definition:"Layout that packs variable-height items for optimal space use.",vibeTip:"Avoid vertical gap artifacts.",comparison:"Masonry packs. Regular grid enforces uniform height."},
-  {title:"Tabs",               definition:"Horizontal navigation switching between parallel views of content.",vibeTip:"Specify 'Segments' vs 'Tabs' for pill vs underline style.",comparison:"Tabs are for parallel views. Stepper is sequential."},
-  {title:"Breadcrumbs",        definition:"Navigational hierarchy path showing the user's location in the app.",vibeTip:"Use chevrons or slashes as separators.",comparison:"Breadcrumbs show location. Progress Stepper shows process."},
-  {title:"Accordion",          definition:"Expandable/collapsible list sections, often used for FAQs.",vibeTip:"Specify single-open or multi-open behavior.",comparison:"Accordion is flat. Tree View is hierarchical."},
-  {title:"Context Menu",       definition:"Right-click menu appearing at the cursor position with contextual actions.",vibeTip:"Use 'ContextMenu' for right-click. Specify sub-menus and shortcuts.",comparison:"Context Menu is on right-click. Dropdown is on left-click. Command Palette is on Cmd+K."},
-  {title:"Drag & Drop",        definition:"Sortable items that can be reordered by dragging, used for boards and priority lists.",vibeTip:"Use 'dnd-kit' for React. Specify drag handle vs whole-item draggable.",comparison:"Sortable reorders within a list. Kanban moves between columns."},
-  {title:"Lightbox",           definition:"Full-screen image viewer with zoom and gallery navigation overlaid on the page.",vibeTip:"Specify 'zoom on click', 'arrow key navigation', and 'pinch to zoom' for mobile.",comparison:"Lightbox views single images. Gallery shows a grid. Carousel scrolls."},
-  {title:"Infinite Scroll",    definition:"Automatically loads more content as the user scrolls to the bottom.",vibeTip:"Use 'IntersectionObserver'. Always provide a 'load more' fallback.",comparison:"Infinite Scroll auto-loads. Pagination uses page numbers."},
-  {title:"Alert",              definition:"Static inline message for important information, warnings, or errors.",vibeTip:"Use for destructive or informational states.",comparison:"Alert is persistent. Toast is temporary."},
-  {title:"Empty State",        definition:"Placeholder shown when there is no data to display.",vibeTip:"Always include a call-to-action in empty states.",comparison:"Empty State guides users. Skeleton shows loading."},
-  {title:"Badge",              definition:"Small visual indicator for notification counts or status labels.",vibeTip:"Distinguish Badge (count) from Chip (category).",comparison:"Badge shows quantity or status. Tag categorizes content."},
-  {title:"Avatar Group",       definition:"Stacked overlapping profile images for showing multiple users compactly.",vibeTip:"Limit visible count and show overflow number.",comparison:"Avatar Group saves space. A list shows all users explicitly."},
-  {title:"Timeline",           definition:"Chronological event list with visual connectors between items.",vibeTip:"Include visual connectors between timeline nodes.",comparison:"Timeline is read-only. Stepper is interactive."},
-  {title:"Skeleton",           definition:"Animated loading placeholder that matches the shape of incoming content.",vibeTip:"Use to prevent cumulative layout shift (CLS).",comparison:"Skeleton shows shape. Spinner shows activity."},
-  {title:"Progress Bar",       definition:"Visual indicator of task or process completion status.",vibeTip:"Use 'determinate' when % is known, 'indeterminate' when not.",comparison:"Progress Bar is read-only. Slider is an input."},
-  {title:"Hero Section",       definition:"Full-width banner at the top of a landing page with headline, subtext, CTA, and background.",vibeTip:"Specify headline hierarchy, CTA button count, and background treatment.",comparison:"Hero opens the page. Banner is a persistent strip."},
-  {title:"Testimonial",        definition:"Social proof section showing customer quotes, avatars, names, and roles.",vibeTip:"Use blockquote semantically. Specify avatar + name + role layout.",comparison:"Testimonial is a quote. Review includes a rating. Case Study is a full story."},
-  {title:"FAQ",                definition:"Expandable questions and answers section that reduces support load.",vibeTip:"Use semantic 'details/summary' or accordion pattern.",comparison:"FAQ is question-focused. Accordion is generic. Help Center is a full system."},
-];
-
-// ─────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────
-let deck=[], qIdx=0, qTotal=10, mode='name-it', startMode='name-it';
-let correct=0, wrong=0, streak=0, best=0, missed=[], answered=false;
-const KEYS=['A','B','C','D'];
-
-function shuffle(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r; }
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// ─────────────────────────────────────────────
-// BUILD QUESTION
-// ─────────────────────────────────────────────
-function buildQ(term, m) {
-  if (m==='recognize-it') {
-    // show definition → pick visual (name)
-    const others = shuffle(TERMS.filter(t=>t!==term)).slice(0,3);
-    const opts = shuffle([term,...others]);
-    return { term, mode:m,
-      prompt: term.definition,
-      badge:'Which component is this?',
-      sub:'',
-      opts, correctIdx: opts.indexOf(term) };
-  } else if (m==='name-it') {
-    // show visual + definition → pick name
-    const others = shuffle(TERMS.filter(t=>t!==term)).slice(0,3);
-    const opts = shuffle([term,...others]);
-    return { term, mode:m,
-      prompt:'What is this UI component called?',
-      badge:'Name the component',
-      sub:'',
-      opts, correctIdx: opts.indexOf(term),
-      optText: o=>o.title };
-  } else {
-    // define-it: show visual + name → pick definition
-    const others = shuffle(TERMS.filter(t=>t!==term)).slice(0,3);
-    const opts = shuffle([term,...others]);
-    return { term, mode:m,
-      prompt: term.title,
-      badge:'Pick the correct definition',
-      sub:'',
-      opts, correctIdx: opts.indexOf(term),
-      optText: o=>o.definition };
-  }
-}
-
-// ─────────────────────────────────────────────
-// RENDER QUESTION
-// ─────────────────────────────────────────────
-function showQ() {
-  answered = false;
-  const effectiveMode = mode==='mixed' ? (Math.random()<.5?'name-it':'define-it') : mode;
-  const q = buildQ(deck[qIdx], effectiveMode);
-  window._cq = q;
-
-  // progress
-  document.getElementById('pbar').style.width = (qIdx/qTotal*100)+'%';
-  document.getElementById('plabel').textContent = (qIdx+1)+' / '+qTotal;
-
-  // header
-  document.getElementById('qbadge').textContent = q.badge;
-  document.getElementById('qtext').textContent = q.prompt;
-  document.getElementById('qsub').textContent = q.sub;
-
-  // preview — always show the current term's visual
-  const pb = document.getElementById('preview-box');
-  pb.innerHTML = P[q.term.title] || `<div style="color:#7b82a8;font-size:.8rem;">Preview unavailable</div>`;
-
-  // options
-  const con = document.getElementById('opts-container');
-  con.innerHTML='';
-
-  if (effectiveMode==='recognize-it') {
-    // visual grid options
-    const grid = document.createElement('div');
-    grid.className='visual-options';
-    q.opts.forEach((opt,i)=>{
-      const v = document.createElement('div');
-      v.className='vopt';
-      v.innerHTML=`<div class="vopt-preview">${P[opt.title]||''}</div><div class="vopt-label"><span class="vopt-key">${KEYS[i]}</span>${esc(opt.title)}</div>`;
-      v.addEventListener('click',()=>selectA(i));
-      grid.appendChild(v);
-    });
-    con.appendChild(grid);
-  } else {
-    // text options
-    const wrap = document.createElement('div');
-    wrap.className='options';
-    q.opts.forEach((opt,i)=>{
-      const btn = document.createElement('button');
-      btn.className='opt';
-      const text = effectiveMode==='name-it' ? opt.title : opt.definition;
-      btn.innerHTML=`<span class="opt-key">${KEYS[i]}</span><span>${esc(text)}</span>`;
-      btn.addEventListener('click',()=>selectA(i));
-      wrap.appendChild(btn);
-    });
-    con.appendChild(wrap);
-  }
-
-  document.getElementById('fb').classList.remove('show');
-  document.getElementById('next-btn').classList.remove('show');
-
-  // keyboard
-  window._kh = e=>{
-    if(answered){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); advance(); } return; }
-    const i=['a','b','c','d'].indexOf(e.key.toLowerCase());
-    if(i>=0&&i<4) selectA(i);
-  };
-  window.removeEventListener('keydown',window._kh);
-  window.addEventListener('keydown',window._kh);
-}
-
-function selectA(idx) {
-  if(answered) return;
-  answered=true;
-  const q=window._cq;
-  const ok=idx===q.correctIdx;
-
-  if(ok){ correct++; streak++; if(streak>best)best=streak; }
-  else { wrong++; streak=0; missed.push(q.term); }
-
-  document.getElementById('sc-c').textContent=correct;
-  document.getElementById('sc-w').textContent=wrong;
-  document.getElementById('sc-s').textContent='🔥 '+streak;
-
-  // style options
-  const isVisual = q.mode==='recognize-it';
-  const items = isVisual
-    ? document.querySelectorAll('.vopt')
-    : document.querySelectorAll('.opt');
-
-  items.forEach((el,i)=>{
-    if(isVisual) el.classList.add('vopt-disabled');
-    else el.disabled=true;
-    if(i===q.correctIdx) el.classList.add('correct');
-    else if(i===idx&&!ok) el.classList.add('wrong');
-    else el.classList.add('dimmed');
-  });
-
-  // feedback
-  const t=q.term;
-  const fh=document.getElementById('fb-head');
-  fh.textContent=ok?'✓  Correct!':'✗  Not quite — here\'s what to know:';
-  fh.className='fb-head '+(ok?'ok':'bad');
-  document.getElementById('fb-def').textContent=t.definition;
-  document.getElementById('fb-tip').textContent=t.vibeTip;
-  document.getElementById('fb-cmp').textContent=t.comparison;
-  document.getElementById('fb').classList.add('show');
-
-  const nb=document.getElementById('next-btn');
-  nb.textContent=qIdx+1>=qTotal?'See Results →':'Next →';
-  nb.classList.add('show');
-}
-
-function advance() {
-  qIdx++;
-  if(qIdx>=qTotal) showResults();
-  else showQ();
-}
-
-// ─────────────────────────────────────────────
-// RESULTS
-// ─────────────────────────────────────────────
-function showResults(){
-  window.removeEventListener('keydown',window._kh);
-  document.getElementById('game').style.display='none';
-  const rs=document.getElementById('results');
-  rs.classList.add('show');
-  const pct=Math.round(correct/qTotal*100);
-  const icons=['📚','👍','🎉','🏆'];
-  const icon=pct>=90?icons[3]:pct>=70?icons[2]:pct>=50?icons[1]:icons[0];
-  const titles=['Keep Practicing!','Not Bad!','Well Done!','Excellent!'];
-  const title=pct>=90?titles[3]:pct>=70?titles[2]:pct>=50?titles[1]:titles[0];
-  document.getElementById('r-icon').textContent=icon;
-  document.getElementById('r-title').textContent=title;
-  document.getElementById('r-sub').textContent=`${correct} / ${qTotal} correct · ${pct}%`;
-  document.getElementById('r-c').textContent=correct;
-  document.getElementById('r-w').textContent=wrong;
-  document.getElementById('r-p').textContent=pct+'%';
-  document.getElementById('r-s').textContent=best;
-
-  const rev=document.getElementById('review');
-  const uniq=[...new Map(missed.map(t=>[t.title,t])).values()];
-  rev.innerHTML=uniq.length?`<h3>Review These (${uniq.length})</h3>`+uniq.map(t=>`<div class="r-item"><div class="r-item-t">${esc(t.title)}</div><div class="r-item-d">${esc(t.definition)}</div></div>`).join('')
-    :'<div style="text-align:center;color:var(--success);font-size:.88rem;margin-bottom:20px;">🎯 Perfect — no misses!</div>';
-}
-
-// ─────────────────────────────────────────────
-// START / WIRING
-// ─────────────────────────────────────────────
-function startGame(){
-  correct=0;wrong=0;streak=0;best=0;qIdx=0;missed=[];answered=false;
-  deck=shuffle(TERMS).slice(0,qTotal);
-  document.getElementById('start-screen').style.display='none';
-  document.getElementById('results').classList.remove('show');
-  document.getElementById('game').style.display='block';
-  document.getElementById('mode-pills').style.display='flex';
-  document.querySelectorAll('.mode-pill[data-mode]').forEach(p=>p.classList.toggle('active',p.dataset.mode===mode));
-  showQ();
-}
-
-let selCount=10;
-document.querySelectorAll('.sopt').forEach(o=>{
-  o.addEventListener('click',()=>{
-    document.querySelectorAll('.sopt').forEach(x=>x.classList.remove('sel'));
-    o.classList.add('sel');
-    selCount=parseInt(o.dataset.count);
-  });
-});
-
-[['sm-name','name-it'],['sm-define','define-it'],['sm-recog','recognize-it']].forEach(([id,m])=>{
-  document.getElementById(id).addEventListener('click',()=>{
-    document.querySelectorAll('#sm-name,#sm-define,#sm-recog').forEach(b=>b.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    startMode=m; mode=m;
-  });
-});
-
-document.querySelectorAll('.mode-pill[data-mode]').forEach(p=>{
-  p.addEventListener('click',()=>{
-    mode=p.dataset.mode;
-    document.querySelectorAll('.mode-pill[data-mode]').forEach(x=>x.classList.toggle('active',x===p));
-    if(!answered) showQ();
-  });
-});
-
-document.getElementById('start-btn').addEventListener('click',()=>{ qTotal=selCount; startGame(); });
-document.getElementById('next-btn').addEventListener('click', advance);
-document.getElementById('replay-btn').addEventListener('click',()=>{
-  document.getElementById('results').classList.remove('show');
-  document.getElementById('mode-pills').style.display='none';
-  document.getElementById('start-screen').style.display='block';
-});
-</script>
+    loadNotes();
+  </script>
 </body>
 </html>
